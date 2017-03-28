@@ -151,17 +151,28 @@ namespace showpicturelocation_project2
 
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            if (e.Url == webBrowser1.Url)
-            {
-                if (webBrowser1.ReadyState == WebBrowserReadyState.Complete)
-                {
-                    TakeScreenshot(webBrowser1);
-                }
-            }
+
         }
         protected void TakeScreenshot(WebBrowser wb)
         {
-            Size pageSize = new Size(wb.Document.Window.Size.Width, wb.Document.Window.Size.Height);
+            
+        }
+
+        private void latText_TextChanged(object sender, EventArgs e)
+        {
+            string url = AppSetting("MAP_URL_MASK", @"https://maps.google.com/maps?q=##LAT_COORD##,##LONG_COORD##");
+            string coord_mask = AppSetting("COORD_FORMAT_MASK", Coord.DEFAULT_COORD_MASK);
+            bool encode_coord = true;
+            Func<string, string> CoordEncoder = new Func<string, string>(s => s);
+            GeoPoint gp = null;
+            gp = GeoPoint.GetFromImageFile(ofd.FileName);
+            url = url
+                        .Replace("##LAT_COORD##", CoordEncoder(gp.Latitude.ToString(coord_mask)))
+                        .Replace("##LONG_COORD##", CoordEncoder(gp.Longitude.ToString(coord_mask)))
+                        .Replace("##LAT_GEO##", latText.Text)
+                        .Replace("##LONG_GEO##", LongText.Text);
+            webBrowser1.Navigate(url);
+
         }
     }
 }
