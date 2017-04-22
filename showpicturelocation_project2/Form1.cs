@@ -19,6 +19,7 @@ namespace showpicturelocation_project2
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            //System.Diagnostics.Process.Start("http://google.com");
             ofd.Title = "Input Picture";
             ofd.Filter = "JPG|*.jgp|JPEG|*.jpeg|PNG|*.png";
             DialogResult dr = ofd.ShowDialog();
@@ -98,6 +99,7 @@ namespace showpicturelocation_project2
             }
             
         }
+ 
 
 
         private static string AppSetting(string setting, string error_default)
