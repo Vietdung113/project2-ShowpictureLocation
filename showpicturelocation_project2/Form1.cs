@@ -179,54 +179,139 @@ namespace showpicturelocation_project2
 
         private void Save_Click(object sender, EventArgs e)
         {
-            stringToGPS(latText.Text, pictureBox1.Image.GetPropertyItem(1), pictureBox1.Image.GetPropertyItem(2), true);
-            stringToGPS(LongText.Text, pictureBox1.Image.GetPropertyItem(3), pictureBox1.Image.GetPropertyItem(4), false);
+            byte[] longtitude = convertDecimal2Degree(double.Parse(LongText.Text));
+            byte[] Latitude = convertDecimal2Degree(double.Parse(latText.Text));
+            WriteLongLat(pictureBox1.Image, Latitude[0], Latitude[1], Latitude[2], longtitude[0], longtitude[1], longtitude[2], true, true);
+
         }
-        private void stringToGPS(string s, PropertyItem propdir, PropertyItem propCoord, bool islatitude)
+        private static ImageCodecInfo GetEncoderInfo(String mimeType)
         {
-            float coord = float.Parse(s);
-            // N = 78 S = 83 E = 69 W =87
-            if (coord > 0 && islatitude == true)
+            int j;
+            ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
+            for (j = 0; j < encoders.Length; ++j)
             {
+                if (encoders[j].MimeType == mimeType)
+                {
+                    return encoders[j];
+                }
+            }
+            return null;
+        }
+        private static void WriteLongLat(Image img, byte latDeg, byte latMin, byte latSec, byte lonDeg, byte lonMin, byte lonSec, bool isWest, bool isNorth)
+        {
+            const int length = 25;
+            System.Drawing.Imaging.Encoder Enc = System.Drawing.Imaging.Encoder.Transformation;
+            var EncParms = new EncoderParameters(1);
+            ImageCodecInfo CodecInfo = GetEncoderInfo("image/jpeg");
 
-                propdir.Value[0] = 78;
-                propdir.Value[1] = 0;
-            }
-            if (coord < 0 && islatitude == true)
+            // TODO: do not load the image to change again 
+            PropertyItem[] PropertyItems = img.PropertyItems;
+            int oldArrLength = PropertyItems.Length;
+            var newProperties = new PropertyItem[oldArrLength];
+            img.PropertyItems.CopyTo(newProperties, 0);
+            newProperties[0].Id = 0x0002;
+            newProperties[0].Type = 5; //5-R 4-L 3-S 
+            newProperties[0].Len = length;
+            newProperties[0].Value = new byte[length];
+            for (int i = 0; i < length; i++)
             {
-                propdir.Value[0] = 83;
-                propdir.Value[1] = 0;
+                newProperties[0].Value[i] = 0;
             }
-            if (coord > 0 && islatitude == false)
+            //PropertyItems[0].Value = Pic.GetPropertyItem(4).Value; // bDescription; 
+            newProperties[0].Value[0] = latDeg;
+            newProperties[0].Value[8] = latMin;
+            byte secHelper = (byte)(latSec / 2.56);
+            byte secRemains = (byte)((latSec - (secHelper * 2.56)) * 100);
+            newProperties[0].Value[16] = secRemains; // add to the sum below x_x_*17_+16 
+            newProperties[0].Value[17] = secHelper; // multiply by 2.56 
+            newProperties[0].Value[20] = 100;
+            img.SetPropertyItem(newProperties[0]);
+            newProperties[1].Id = 0x0004;
+            newProperties[1].Type = 5; //5-R 4-L 3-S 
+            newProperties[1].Len = length;
+            newProperties[1].Value = new byte[length];
+            try
             {
-                propdir.Value[0] = 69;
-                propdir.Value[1] = 0;
+                for (int i = 0; i < length; i++)
+                {
+                    newProperties[1].Value[i] = 0;
+                }
             }
-            if (coord < 0 && islatitude == false)
+            catch (Exception e)
             {
-                propdir.Value[0] = 87;
-                propdir.Value[1] = 0;
+                Console.WriteLine("Error {0}", e);
             }
-            if (islatitude)
-            {
-                propdir.Id = 1;
-                pictureBox1.Image.SetPropertyItem(propdir);
+            newProperties[1].Value[0] = lonDeg;
+            newProperties[1].Value[8] = lonMin;
+            secHelper = (byte)(lonSec / 2.56);
+            secRemains = (byte)((lonSec - (secHelper * 2.56)) * 100);
+            newProperties[1].Value[16] = secRemains;
+            // add to the sum bellow x_x_*17_+16 
+            newProperties[1].Value[17] = secHelper;
+            // multiply by 2.56 
+            newProperties[1].Value[20] = 100;
+            // multiply by 2.56 
 
-                coord = Math.Abs(coord);
-                // convert number to bit 
-                propCoord.Value = BitConverter.GetBytes(coord);
-                propCoord.Id = 2;
-                pictureBox1.Image.SetPropertyItem(propCoord);
+            //PropertyItem current = Pic.GetPropertyItem(2); 
+            img.SetPropertyItem(newProperties[1]);
+            //GPS Version 
+            newProperties[0].Id = 0x0000;
+            newProperties[0].Type = 1;
+            newProperties[0].Len = 4;
+            newProperties[0].Value[0] = 2;
+            newProperties[0].Value[1] = 2;
+            newProperties[0].Value[2] = 0;
+            newProperties[0].Value[3] = 0;
+            img.SetPropertyItem(newProperties[0]);
+
+            //GPS Lat REF 
+            newProperties[0].Id = 0x0001;
+            newProperties[0].Type = 2;
+            newProperties[0].Len = 2;
+            if (isNorth)
+            {
+                newProperties[0].Value[0] = 78; //ASCII for N
             }
             else
             {
-                propdir.Id = 3;
-                pictureBox1.Image.SetPropertyItem(propdir);
-                coord = Math.Abs(coord);
-                propCoord.Value = BitConverter.GetBytes(coord);
-                propCoord.Id = 4;
-                pictureBox1.Image.SetPropertyItem(propCoord);
+                newProperties[0].Value[0] = 83; //ASCII for S
             }
+
+            newProperties[0].Value[1] = 0;
+            img.SetPropertyItem(newProperties[0]);
+
+
+            //GPS Lon REF 
+            newProperties[0].Id = 0x0003;
+            newProperties[0].Type = 2; //5-R 4-L 3-S 
+            newProperties[0].Len = 2;
+            if (isWest == false)
+            {
+                newProperties[0].Value[0] = 69; //ASCII for E
+            }
+            else
+            {
+                newProperties[0].Value[0] = 87; //ASCII for W
+            }
+            newProperties[0].Value[1] = 0;
+            img.SetPropertyItem(newProperties[0]);
+
+        }
+        private byte[] convertDecimal2Degree(double decimal_degrees)
+        {
+
+            byte[] result = new byte[3];
+            // set decimal_degrees value here
+
+            double minutes = (decimal_degrees - Math.Floor(decimal_degrees)) * 60.0;
+            double seconds = (minutes - Math.Floor(minutes)) * 60.0;
+            double tenths = (seconds - Math.Floor(seconds)) * 10.0;
+            // get rid of fractional part
+            result[0] = System.Convert.ToByte(Math.Floor(minutes));
+            result[1] = System.Convert.ToByte(Math.Floor(seconds));
+            result[2] = System.Convert.ToByte(Math.Floor(tenths));
+
+            return result;
         }
     }
 }
