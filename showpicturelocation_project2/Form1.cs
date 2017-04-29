@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using System.Drawing.Imaging;
 namespace showpicturelocation_project2
 {
     public partial class Form1 : Form
@@ -29,7 +29,7 @@ namespace showpicturelocation_project2
             }
             string url = location(ofd.FileName);
             webBrowser1.Navigate(url);
-            
+
         }
 
 
@@ -69,14 +69,14 @@ namespace showpicturelocation_project2
                         MessageBox.Show("Error getting url encodong details.  Ensure app config is present and has proper settings.");
                     }
                     Func<string, string> CoordEncoder = new Func<string, string>(s => s);
-                   /*
-                    if (encode_coord)
-                    {
-                        CoordEncoder = new Func<string, string>(s => System.Web.HttpUtility.UrlEncode(s));
-                    }
-                    */
+                    /*
+                     if (encode_coord)
+                     {
+                         CoordEncoder = new Func<string, string>(s => System.Web.HttpUtility.UrlEncode(s));
+                     }
+                     */
                     latText.Text = CoordEncoder(gp.Latitude.ToGeoCode().ToString());
-                    LongText.Text = CoordEncoder(gp.Longitude.ToGeoCode().ToString());                
+                    LongText.Text = CoordEncoder(gp.Longitude.ToGeoCode().ToString());
                     url = url
                         .Replace("##LAT_COORD##", CoordEncoder(gp.Latitude.ToString(coord_mask)))
                         .Replace("##LONG_COORD##", CoordEncoder(gp.Longitude.ToString(coord_mask)))
@@ -97,9 +97,9 @@ namespace showpicturelocation_project2
                 MessageBox.Show("Unknown failure, see additional details.");
                 return null;
             }
-            
+
         }
- 
+
 
 
         private static string AppSetting(string setting, string error_default)
@@ -157,7 +157,7 @@ namespace showpicturelocation_project2
         }
         protected void TakeScreenshot(WebBrowser wb)
         {
-            
+
         }
 
         private void latText_TextChanged(object sender, EventArgs e)
@@ -175,6 +175,58 @@ namespace showpicturelocation_project2
                         .Replace("##LONG_GEO##", LongText.Text);
             webBrowser1.Navigate(url);
 
+        }
+
+        private void Save_Click(object sender, EventArgs e)
+        {
+            stringToGPS(latText.Text, pictureBox1.Image.GetPropertyItem(1), pictureBox1.Image.GetPropertyItem(2), true);
+            stringToGPS(LongText.Text, pictureBox1.Image.GetPropertyItem(3), pictureBox1.Image.GetPropertyItem(4), false);
+        }
+        private void stringToGPS(string s, PropertyItem propdir, PropertyItem propCoord, bool islatitude)
+        {
+            float coord = float.Parse(s);
+            // N = 78 S = 83 E = 69 W =87
+            if (coord > 0 && islatitude == true)
+            {
+
+                propdir.Value[0] = 78;
+                propdir.Value[1] = 0;
+            }
+            if (coord < 0 && islatitude == true)
+            {
+                propdir.Value[0] = 83;
+                propdir.Value[1] = 0;
+            }
+            if (coord > 0 && islatitude == false)
+            {
+                propdir.Value[0] = 69;
+                propdir.Value[1] = 0;
+            }
+            if (coord < 0 && islatitude == false)
+            {
+                propdir.Value[0] = 87;
+                propdir.Value[1] = 0;
+            }
+            if (islatitude)
+            {
+                propdir.Id = 1;
+                pictureBox1.Image.SetPropertyItem(propdir);
+
+                coord = Math.Abs(coord);
+                // convert number to bit 
+                propCoord.Value = BitConverter.GetBytes(coord);
+                propCoord.Id = 2;
+                pictureBox1.Image.SetPropertyItem(propCoord);
+            }
+            else
+            {
+                propdir.Id = 3;
+                pictureBox1.Image.SetPropertyItem(propdir);
+                coord = Math.Abs(coord);
+                propCoord.Value = BitConverter.GetBytes(coord);
+                propCoord.Id = 4;
+                pictureBox1.Image.SetPropertyItem(propCoord);
+            }
         }
     }
 }
