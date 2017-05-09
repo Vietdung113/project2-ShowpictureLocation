@@ -295,7 +295,6 @@ namespace showpicturelocation_project2
             }
             newProperties[0].Value[1] = 0;
             img.SetPropertyItem(newProperties[0]);
-
         }
         private byte[] convertDecimal2Degree(double decimal_degrees)
         {
