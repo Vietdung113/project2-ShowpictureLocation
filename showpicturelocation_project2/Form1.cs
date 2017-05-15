@@ -17,6 +17,16 @@ namespace showpicturelocation_project2
             InitializeComponent();
         }
 
+        /// <summary>
+        ///      Gui link toi Gooogle Map
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <remarks>
+        ///      HAN CHE: bam vao search moi nhay vao toa do mong muon
+        ///      NGUYEN NHAN : Thieu app key trong duong dan
+        ///      GIAI PHAP DU KIEN: se dang ky app key tren tai khoan gmail , roi xu dung no trong duong link
+        /// </remarks>
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             //System.Diagnostics.Process.Start("http://google.com");
